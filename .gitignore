@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.tmp
+*.sqlite-journal
+.env
+_site/
+
+# Private runtime data stays in D1 / local working files
+collector/data/
+collector/curated.json
+collector/sources.json
+collector/overrides.json
+collector/automation.json
+platform/data/
