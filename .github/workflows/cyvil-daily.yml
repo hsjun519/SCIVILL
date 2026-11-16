@@ -1,4 +1,4 @@
-name: CYVIL daily competition collection
+name: SCIVILL daily competition collection
 on:
   schedule:
     # 23:00 UTC = next day 08:00 Asia/Seoul. GitHub may delay runs.

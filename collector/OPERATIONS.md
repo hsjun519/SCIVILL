@@ -1,4 +1,4 @@
-# CYVIL 대회 자동 관리 운영 안내
+# SCIVILL 대회 자동 관리 운영 안내
 
 공유 링크: https://hsjun519.github.io/SCIVILL/platform/
 서버 사이트: https://scvill-club-hub.softbrook129.chatgpt.site
