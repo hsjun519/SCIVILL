@@ -8,13 +8,19 @@ COLLECTION_HOSTS=['www.korea.kr','apac.spectory.net','aichallenge4all.or.kr','ww
 
 def token():
     url=os.environ['ACTIONS_ID_TOKEN_REQUEST_URL']+'&audience='+urllib.parse.quote(SITE,safe='')
-    request=urllib.request.Request(url,headers={'Authorization':'Bearer '+os.environ['ACTIONS_ID_TOKEN_REQUEST_TOKEN']})
-    with urllib.request.urlopen(request,timeout=30) as response: return json.load(response)['value']
+    request=urllib.request.Request(url,headers={'Authorization':'Bearer '+os.environ['ACTIONS_ID_TOKEN_REQUEST_TOKEN'],'User-Agent':runner.UA})
+    try:
+        with urllib.request.urlopen(request,timeout=30) as response: return json.load(response)['value']
+    except urllib.error.HTTPError as error: raise SystemExit('GitHub identity provider HTTP '+str(error.code)) from None
 
 def api(path,payload=None):
-    headers={'Authorization':'Bearer '+token(),'Content-Type':'application/json'}
+    headers={'Authorization':'Bearer '+token(),'Content-Type':'application/json','User-Agent':runner.UA}
     request=urllib.request.Request(SITE+'/api/collector/'+path,headers=headers,data=None if payload is None else json.dumps(payload,ensure_ascii=False).encode())
-    with urllib.request.urlopen(request,timeout=60) as response: return json.load(response)
+    try:
+        with urllib.request.urlopen(request,timeout=60) as response: return json.load(response)
+    except urllib.error.HTTPError as error:
+        # Only fixed stage and status; never log tokens, response bodies or private records.
+        raise SystemExit('Private catalogue '+path+' HTTP '+str(error.code)) from None
 
 def main():
     context=api('context')
