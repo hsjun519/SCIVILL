@@ -6,6 +6,12 @@ from .core import connect, records
 SITE='https://scvill-club-hub.softbrook129.chatgpt.site'
 COLLECTION_HOSTS=['www.korea.kr','apac.spectory.net','aichallenge4all.or.kr','www.mofa.go.kr','www.nie.re.kr']
 
+def validate_sources(sources):
+    for source in sources:
+        # Manual-only sources may be documented without granting network access.
+        if source.get('enabled') and not set(source['allowedHosts'])<=set(COLLECTION_HOSTS):
+            raise ValueError('Unapproved source host')
+
 def token():
     url=os.environ['ACTIONS_ID_TOKEN_REQUEST_URL']+'&audience='+urllib.parse.quote(SITE,safe='')
     request=urllib.request.Request(url,headers={'Authorization':'Bearer '+os.environ['ACTIONS_ID_TOKEN_REQUEST_TOKEN'],'User-Agent':runner.UA})
@@ -24,8 +30,7 @@ def api(path,payload=None):
 
 def main():
     context=api('context')
-    for source in context['sources']:
-        if not set(source['allowedHosts'])<=set(COLLECTION_HOSTS): raise ValueError('Unapproved source host')
+    validate_sources(context['sources'])
     # Private D1 catalogue travels only over authenticated HTTPS to this trusted job.
     # All temporary records and SQLite files are deleted at job completion, never committed.
     with tempfile.TemporaryDirectory(prefix='cyvil-') as directory:

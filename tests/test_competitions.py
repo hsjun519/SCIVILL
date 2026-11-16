@@ -72,6 +72,10 @@ class Storage(unittest.TestCase):
             job=runner.run(pathlib.Path(self.tmp.name)/'test.sqlite',pathlib.Path(self.tmp.name)/'output')
         self.assertEqual(job['status'],'partial'); self.assertEqual(len(records(self.db)),1); self.assertEqual(records(self.db)[0]['publicationStatus'],'published')
 class Network(unittest.TestCase):
+    def test_manual_sources_do_not_expand_network_allowlist(self):
+        from collector.remote_client import validate_sources
+        validate_sources([{'enabled':False,'allowedHosts':['unapproved.example']}])
+        with self.assertRaises(ValueError): validate_sources([{'enabled':True,'allowedHosts':['unapproved.example']}])
     def test_no_private_destinations(self):
         with self.assertRaises(ValueError): safe_url('https://127.0.0.1/secret',['127.0.0.1'])
         with self.assertRaises(ValueError): safe_url('http://example.org/',['example.org'])
