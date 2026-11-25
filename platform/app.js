@@ -99,6 +99,46 @@
     if (!(c.posterUrl && c.posterDisplayAllowed)) return '';
     return /^assets\/[a-zA-Z0-9._-]+\.(jpg|png|webp)$/.test(c.posterAsset || '') ? c.posterAsset : safeLink(c.posterUrl);
   }
+  // 이용 허락이 확인된 공식 포스터가 없을 때, 공고의 사실 정보(제목·기간·대상)로 그리는 SCIVILL 안내 표지
+  const POSTER_COLORS = {
+    gold: [['#9A5B06', '#FFE08A'], ['#7A4A12', '#FFD27A'], ['#8C6100', '#FFF0B3']],
+    blue: [['#1D5BC6', '#FFD84D'], ['#0F4C81', '#8FD3FF'], ['#2848A8', '#FFC2D1']],
+    violet: [['#4A33B0', '#9EF0D2'], ['#2E3A8C', '#FFD27A'], ['#5E2D96', '#B9F2FF']],
+    green: [['#14674A', '#F6E27A'], ['#2E6B2E', '#C9F5A8'], ['#0E5B6B', '#FFD9A0']]
+  };
+  const MOTIFS = [
+    '<g fill="none" stroke="currentColor" stroke-width="2.5" opacity=".32"><circle cx="300" cy="190" r="60"/><circle cx="300" cy="190" r="95"/><circle cx="300" cy="190" r="130"/></g><circle cx="300" cy="190" r="28" fill="currentColor" opacity=".55"/>',
+    '<g stroke="currentColor" stroke-width="11" opacity=".2">' + [0, 1, 2, 3, 4, 5].map(i => `<path d="M${150 + i * 32} 330 L${330 + i * 32} 60"/>`).join('') + '</g>',
+    '<g fill="currentColor" opacity=".42">' + Array.from({ length: 36 }, (_, i) => `<circle cx="${190 + (i % 6) * 18}" cy="${150 + Math.floor(i / 6) * 18}" r="3"/>`).join('') + '</g>',
+    '<circle cx="290" cy="215" r="105" fill="currentColor" opacity=".2"/><rect x="200" y="122" width="62" height="62" rx="4" fill="currentColor" opacity=".55" transform="rotate(12 231 153)"/>'
+  ];
+  const hashOf = str => [...String(str)].reduce((h, ch) => (h * 31 + ch.codePointAt(0)) >>> 0, 7);
+  function shortRange(c) {
+    const e = c.applicationEndAt.slice(0, 10);
+    const s = c.applicationStartAt ? c.applicationStartAt.slice(0, 10) : '';
+    const f = (k, yr) => { const [y, m, d] = ymd(k); return `${yr ? y + '.' : ''}${m}.${d}`; };
+    if (!s) return `~ ${f(e, true)}`;
+    const cross = s.slice(0, 4) !== e.slice(0, 4);
+    return `${f(s, cross)} — ${f(e, cross)}`;
+  }
+  const firstClause = t => String(t || '').split(/[.。](?:\s|$)|\s·\s|;|\n/)[0].trim();
+  function posterTheme(c) {
+    const cat = subjectCat(c), h = hashOf(c.id);
+    const [bg, ac] = POSTER_COLORS[cat.tone][h % 3];
+    return { cat, bg, ac, motif: MOTIFS[(h >> 3) % MOTIFS.length] };
+  }
+  const posterTags = (c, cat) => `<span class="poster-tag">${esc(cat.label)}</span>${c.hasMinisterAward ? '<span class="poster-tag solid">장관상</span>' : ''}`;
+  // 카드 윗부분용 가로형 표지: 분야·기간만 크게 보여 주고 제목은 카드 본문에 둡니다.
+  function posterBanner(c) {
+    const { cat, bg, ac, motif } = posterTheme(c);
+    return `<div class="pban" style="--pbg:${bg};--pac:${ac}" aria-hidden="true"><svg class="poster-art" viewBox="0 0 300 400" preserveAspectRatio="xMaxYMid slice">${motif}</svg><div class="pban-top">${posterTags(c, cat)}</div><div class="pban-date"><small>접수 기간</small><b>${esc(shortRange(c))}</b></div></div>`;
+  }
+  function posterArt(c) {
+    const { cat, bg, ac, motif } = posterTheme(c);
+    const [main, sub] = c.title.split(/\s[—–-]\s/);
+    const info = [['대상', firstClause(c.eligibility)], ['형태', people(c)], ['시상', firstClause(c.awards)]].filter(([, v]) => v);
+    return `<div class="poster" style="--pbg:${bg};--pac:${ac}" role="img" aria-label="${esc(c.title)} 안내 표지"><svg class="poster-art" viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${motif}</svg><div class="poster-in" aria-hidden="true"><div class="poster-top">${posterTags(c, cat)}</div><div class="poster-title">${esc(main)}</div>${sub ? `<div class="poster-sub">${esc(sub)}</div>` : ''}<div class="poster-fill"></div><div class="poster-date"><small>접수 기간</small><b>${esc(shortRange(c))}</b></div><div class="poster-info">${info.map(([k, v]) => `<div><span class="k">${k}</span><span class="v">${esc(v)}</span></div>`).join('')}</div><div class="poster-foot">${esc(c.organizer)}</div></div></div>`;
+  }
   const byDeadline = (a, b) => +endAt(a) - +endAt(b);
   const byStart = (a, b) => (a.applicationStartAt || '').localeCompare(b.applicationStartAt || '');
 
@@ -222,14 +262,14 @@
     return `<button class="bm-btn" type="button" data-act="bookmark" data-id="${esc(c.id)}" aria-pressed="${on}" aria-label="${esc(c.title)} ${on ? '관심 대회에서 빼기' : '관심 대회로 저장'}">${ic('bookmark', 20, on)}</button>`;
   }
   function thumb(c) {
-    const src = posterSrc(c), cat = subjectCat(c);
-    return src ? `<div class="thumb"><img src="${esc(src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"></div>` : `<div class="thumb tone-${cat.tone}">${ic(cat.icon, 26)}</div>`;
+    const src = posterSrc(c);
+    return src ? `<div class="thumb"><img src="${esc(src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"></div>` : `<div class="thumb">${posterArt(c)}</div>`;
   }
   const compHref = c => `#competition/${encodeURIComponent(c.id)}`;
   const compRow = c => `<article class="c-row ${status(c) === 'closed' ? 'closed' : ''}">${thumb(c)}<div class="info">${compBadges(c)}<a class="title clamp-2 stretched" href="${compHref(c)}">${esc(c.title)}</a><div class="org ellipsis">${esc(c.organizer)} · ${esc(modeLabel(c))}</div><div class="when">${esc(whenText(c))}</div></div>${bmBtn(c)}</article>`;
   function compCard(c) {
-    const src = posterSrc(c), cat = subjectCat(c);
-    return `<article class="c-card"><div class="cover tone-${cat.tone}">${src ? `<img src="${esc(src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : `<span class="cover-cat">${esc(cat.label)}</span><span class="cover-icon">${ic(cat.icon, 34)}</span>`}${statusBadge(c)}</div><div class="body"><a class="title clamp-2 stretched" href="${compHref(c)}">${esc(c.title)}</a><div class="meta ellipsis">${esc(c.organizer)}</div></div>${bmBtn(c)}</article>`;
+    const src = posterSrc(c);
+    return `<article class="c-card"><div class="cover">${src ? `<img src="${esc(src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : posterBanner(c)}${statusBadge(c)}</div><div class="body"><a class="title clamp-2 stretched" href="${compHref(c)}">${esc(c.title)}</a><div class="meta ellipsis">${esc(c.organizer)}</div></div>${bmBtn(c)}</article>`;
   }
   const empty = (icon, title, desc = '', action = '') => `<div class="empty"><div class="ic">${ic(icon, 24)}</div><b>${title}</b>${desc ? `<div>${desc}</div>` : ''}${action}</div>`;
   const ext = (url, label, cls = 'btn') => `<a class="${cls}" href="${esc(safeLink(url))}" target="_blank" rel="noopener noreferrer">${label}${ic('external', 16)}</a>`;
@@ -372,7 +412,7 @@
     const deadlineLine = `${fmtDay(c.applicationEndAt, true)}${t ? ' ' + t : ''} 마감${t ? '' : ' (시각 미공개)'}`;
     const linked = state.teams.filter(x => x.competition === c.id);
     let main = `<article class="card">`;
-    main += src ? `<div class="detail-poster"><img src="${esc(src)}" alt="${esc(c.title)} 공식 포스터" decoding="async" referrerpolicy="no-referrer"></div>` : `<div class="detail-banner tone-${cat.tone}">${ic(cat.icon, 44)}</div>`;
+    main += src ? `<div class="detail-poster"><img src="${esc(src)}" alt="${esc(c.title)} 공식 포스터" decoding="async" referrerpolicy="no-referrer"></div>` : `<div class="detail-poster gen">${posterArt(c)}<p class="poster-note">공고 내용으로 SCIVILL이 만든 안내 표지예요. 주최 측 공식 포스터는 ${c.posterUrl ? '\'공식 포스터 원본\' 링크' : '공식 공고'}에서 볼 수 있어요.</p></div>`;
     main += `<div class="detail-head">${compBadges(c)}<h1>${esc(c.title)}</h1><div class="org">${esc(c.organizer)}${c.host && c.host !== c.organizer ? ` · 주관 ${esc(c.host)}` : ''}</div></div>`;
     main += `<dl class="facts"><dt>접수 기간</dt><dd>${c.applicationStartAt ? esc(fmtDay(c.applicationStartAt, true)) + ' ~ ' : ''}${esc(fmtDay(c.applicationEndAt, true))}${t ? ' ' + t : ''}${t ? '' : '<span class="small muted">마감 시각이 공개되지 않았어요. 마감일 하루 종일 유효한 것으로 표시해요.</span>'}</dd><dt>참가 대상</dt><dd>${esc(c.eligibility)}</dd><dt>참가 형태</dt><dd>${esc(people(c))}</dd><dt>참가비</dt><dd>${esc(c.fee || '공식 공고에서 확인')}</dd><dt>분야</dt><dd>${esc(c.tags.map(k => catOf(k).label).join(' · '))}</dd></dl>`;
     main += dSection('대회 소개', (c.description ? `<p>${esc(c.description)}</p>` : '') + (c.theme ? `<p><b>주제</b> · ${esc(c.theme)}</p>` : ''));

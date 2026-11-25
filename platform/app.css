@@ -292,6 +292,7 @@ svg { flex: none; }
 .c-card:hover { box-shadow: var(--shadow-md); }
 .c-card .cover { height: 112px; position: relative; display: flex; align-items: flex-end; padding: 14px 16px; }
 .c-card .cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.c-card .cover { background: var(--surface-3); overflow: hidden; }
 .c-card .cover .badge { position: relative; }
 .c-card .body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
 .c-card .title { font-size: 16px; font-weight: 700; line-height: 1.4; }
@@ -343,6 +344,8 @@ button.row:hover, a.row:hover { background: var(--surface-2); }
 .c-row:hover { box-shadow: var(--shadow-md); }
 .c-row .thumb { width: 64px; height: 84px; border-radius: 12px; flex: none; display: grid; place-items: center; overflow: hidden; }
 .c-row .thumb img { width: 100%; height: 100%; object-fit: cover; }
+.c-row .thumb { background: var(--surface-3); align-items: start; }
+.c-row .thumb .poster { width: 64px; }
 .c-row .info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; padding-right: 28px; }
 .c-row .title { font-size: 16px; font-weight: 700; line-height: 1.4; }
 .c-row .org { font-size: 13px; color: var(--text-3); }
@@ -399,6 +402,9 @@ select.field { appearance: none; background-image: url("data:image/svg+xml,%3Csv
 .detail-head .org { color: var(--text-3); font-size: 14px; }
 .detail-poster { border-radius: var(--radius) var(--radius) 0 0; overflow: hidden; background: var(--surface-3); }
 .detail-poster img { width: 100%; max-height: 560px; object-fit: contain; }
+.detail-poster.gen { padding: 28px 24px 18px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.detail-poster.gen .poster { max-width: 340px; border-radius: 6px; box-shadow: 0 12px 32px rgba(15, 23, 42, .18); }
+.poster-note { font-size: 12px; color: var(--text-3); text-align: center; max-width: 340px; line-height: 1.5; }
 .detail-banner { height: 96px; border-radius: var(--radius) var(--radius) 0 0; display: flex; align-items: center; justify-content: center; }
 .facts { display: grid; grid-template-columns: 96px minmax(0, 1fr); row-gap: 12px; column-gap: 12px; margin: 0; padding: 20px 24px; border-top: 1px solid var(--line); font-size: 15px; }
 .facts dt { color: var(--text-3); font-weight: 600; }
@@ -534,3 +540,28 @@ select.field { appearance: none; background-image: url("data:image/svg+xml,%3Csv
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 @media (max-width: 1023px) { .toast { bottom: calc(80px + env(safe-area-inset-bottom)); } }
+
+/* ---------- Generated poster (안내 표지) ---------- */
+.poster { position: relative; width: 100%; aspect-ratio: 3 / 4; container-type: inline-size; background: var(--pbg); color: #fff; overflow: hidden; -webkit-font-smoothing: antialiased; }
+.poster-art { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--pac); }
+.poster-in { position: absolute; inset: 0; padding: 7.5cqw 7cqw 6.5cqw; display: flex; flex-direction: column; gap: 2.4cqw; }
+.poster-top { display: flex; gap: 1.8cqw; }
+.poster-tag { border: .4cqw solid rgba(255, 255, 255, .75); border-radius: 99px; padding: .9cqw 2.8cqw; font-size: 3.5cqw; font-weight: 700; line-height: 1.3; }
+.poster-tag.solid { background: var(--pac); border-color: var(--pac); color: var(--pbg); }
+.poster-title { margin-top: 3.5cqw; font-size: 9.4cqw; font-weight: 800; line-height: 1.17; letter-spacing: -.04em; word-break: keep-all; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+.poster-sub { font-size: 4.6cqw; font-weight: 700; color: var(--pac); line-height: 1.3; word-break: keep-all; }
+.poster-fill { flex: 1; min-height: 2cqw; }
+.poster-date small { display: block; font-size: 3.3cqw; font-weight: 600; opacity: .8; }
+.poster-date b { display: block; font-size: 7.6cqw; font-weight: 800; letter-spacing: -.03em; color: var(--pac); line-height: 1.2; }
+.poster-info { display: grid; gap: 1.3cqw; padding-top: 3cqw; border-top: .4cqw solid rgba(255, 255, 255, .35); font-size: 3.4cqw; line-height: 1.35; }
+.poster-info div { display: flex; gap: 2.6cqw; min-width: 0; }
+.poster-info .k { flex: none; opacity: .7; font-weight: 600; }
+.poster-info .v { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+.poster-foot { font-size: 3.3cqw; font-weight: 700; opacity: .9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1cqw; }
+
+.pban { position: absolute; inset: 0; background: var(--pbg); color: #fff; container-type: inline-size; overflow: hidden; }
+.pban-top { position: absolute; left: 16px; top: 14px; display: flex; gap: 6px; }
+.pban .poster-tag { font-size: 12px; padding: 3px 9px; border-width: 1.5px; }
+.pban-date { position: absolute; right: 16px; bottom: 12px; text-align: right; line-height: 1.2; }
+.pban-date small { display: block; font-size: 11px; font-weight: 600; opacity: .8; }
+.pban-date b { font-size: min(20px, 6.4cqw); font-weight: 800; letter-spacing: -.02em; color: var(--pac); white-space: nowrap; }
